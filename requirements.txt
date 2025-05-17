@@ -8,3 +8,5 @@ datasets
 seaborn 
 pyLDAvis 
 transformers
+keybert 
+sentence-transformers
