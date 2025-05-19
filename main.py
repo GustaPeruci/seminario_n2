@@ -96,7 +96,7 @@ class TopicModelingGUI:
                 
                 self.root.after(0, lambda: self.display_results(topics, fig))
             except Exception as e:
-                self.root.after(0, lambda: messagebox.showerror("Erro", str(e)))
+                self.root.after(0, lambda e=e: messagebox.showerror("Erro", str(e)))
             finally:
                 self.root.after(0, lambda: self.cleanup_analysis())
         

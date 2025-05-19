@@ -1,5 +1,6 @@
+import json  # Faltava importar o json
 import pandas as pd
-from datasets import load_dataset
+import os
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.decomposition import NMF, LatentDirichletAllocation
 from sentence_transformers import SentenceTransformer
@@ -10,18 +11,27 @@ from model.text_preprocessor import TextPreprocessor
 from model.helpers import extract_topics, plot_topic_weights
 
 class TopicModeler:
-    def __init__(self):
+    def __init__(self, data_dir="datasets"):
         self.preprocessor = TextPreprocessor()
         self.vectorizer = TfidfVectorizer(max_df=0.95, min_df=2, max_features=1000)
         self.sentence_model = SentenceTransformer('distiluse-base-multilingual-cased-v1')
-        self.texts_clean, self.feature_names, self.raw_texts = self._prepare_dataset()
+        self.texts_clean, self.feature_names, self.raw_texts = self._prepare_dataset(data_dir)
 
-    def _prepare_dataset(self):
-        datasets = [
-            load_dataset("joelniklaus/brazilian_court_decisions", split=split)
-            for split in ["train", "test", "validation"]
-        ]
-        df = pd.concat([pd.DataFrame(ds) for ds in datasets], ignore_index=True)
+    def _read_jsonl(self, filepath):
+        if not os.path.exists(filepath):
+            print(f"Aviso: arquivo {filepath} não encontrado.")
+            return []
+        with open(filepath, 'r', encoding='utf-8') as f:
+            return [json.loads(line) for line in f if line.strip()]
+
+    def _prepare_dataset(self, data_dir):
+        splits = ["train", "test", "validation"]
+        data = []
+        for split in splits:
+            path = f"{data_dir}/{split}.jsonl"
+            data.extend(self._read_jsonl(path))
+
+        df = pd.DataFrame(data)
         df = df.dropna(subset=["ementa_text"])
         raw_texts = df["ementa_text"].astype(str).tolist()
         texts_clean = self.preprocessor.preprocess_list(raw_texts)
